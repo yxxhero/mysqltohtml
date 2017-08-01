@@ -11,6 +11,7 @@ import logging
 import tempfile
 import sys
 import MySQLdb
+from datetime import datetime
 from io import open
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -40,6 +41,14 @@ except Exception,e:
 else:
     logging.info("数据库连接成功")
     cur = conn.cursor()
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self,o):
+        if isinstance(o,datetime):
+            return o.isoformat()
+        return json.JSONEncoder.default(self,o)
+
+
 # Initialize Jinja 2 env
 env = Environment(
     loader=FileSystemLoader(templates_dir),
@@ -64,48 +73,11 @@ def convert(db_name,table_name, **kwargs):
     cur.execute(rows_sql)
     rows_result=cur.fetchall()
     csv_rows = [row for row in rows_result if row]
-    print csv_rows
-#
-#    # Set default column name if header is not present
-#    if not csv_headers and len(csv_rows) > 0:
-#        end = len(csv_rows[0]) + 1
-#        csv_headers = ["Column {}".format(n) for n in range(1, end)]
-#
-#    # Render csv to HTML
-#    html = render_template(csv_headers, csv_rows, **kwargs)
-#
-#    # Freeze all JS files in template
-#    return freeze_js(html)
-#
-convert("darkinfo","dark_status")
 
-def save(file_name, content):
-    """Save content to a file"""
-    with open(file_name, "w", encoding="utf-8") as output_file:
-        output_file.write(content)
-        return output_file.name
+    html = render_template(csv_headers, csv_rows, **kwargs)
 
-
-def serve(content):
-    """Write content to a temp file and serve it in browser"""
-    temp_folder = tempfile.gettempdir()
-    temp_file_name = tempfile.gettempprefix() + str(uuid.uuid4()) + ".html"
-    # Generate a file path with a random name in temporary dir
-    temp_file_path = os.path.join(temp_folder, temp_file_name)
-
-    # save content to temp file
-    save(temp_file_path, content)
-
-    # Open templfile in a browser
-    webbrowser.open("file://{}".format(temp_file_path))
-
-    # Block the thread while content is served
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        # cleanup the temp file
-        os.remove(temp_file_path)
+    # Freeze all JS files in template
+    return freeze_js(html)
 
 
 def render_template(table_headers, table_items, **options):
@@ -116,8 +88,8 @@ def render_template(table_headers, table_items, **options):
     display_length = options.get("display_length") or -1
     height = options.get("height") or "70vh"
     default_length_menu = [-1, 10, 25, 50]
-    pagination = options.get("pagination")
-    virtual_scroll_limit = options.get("virtual_scroll")
+    pagination = options.get("pagination") or True
+    virtual_scroll_limit = options.get("virtual_scroll") or 1000
 
     # Change % to vh
     height = height.replace("%", "vh")
@@ -183,7 +155,8 @@ def render_template(table_headers, table_items, **options):
         datatable_options["deferRender"] = True
         datatable_options["bLengthChange"] = False
 
-    enable_export = options["export"]
+    enable_export = True 
+    options["export_options"]=["copy", "csv", "json", "print"]
     if enable_export:
         if options["export_options"]:
             allowed = list(options["export_options"])
@@ -194,7 +167,7 @@ def render_template(table_headers, table_items, **options):
         datatable_options["buttons"] = allowed
 
     datatable_options_json = json.dumps(datatable_options,
-                                        separators=(",", ":"))
+                                        separators=(",", ":"),cls=DateTimeEncoder)
 
     return template.render(title=caption or "Table",
                            caption=caption,
@@ -226,3 +199,6 @@ def freeze_js(html):
         html = html[:match.start()] + js_content + html[match.end():]
 
     return html
+
+with open("test.html","a") as fe:
+    fe.write(convert("darkinfo","dark_status"))
