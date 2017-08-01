@@ -59,9 +59,12 @@ def convert(db_name,table_name, **kwargs):
     cur.execute(header_sql)
     header_result=cur.fetchall()
     csv_headers =[heads[0] for heads in header_result if heads] 
-    print csv_headers
-
-#    csv_rows = [row for row in reader if row]
+    
+    rows_sql="select * from %s" %(table_name)
+    cur.execute(rows_sql)
+    rows_result=cur.fetchall()
+    csv_rows = [row for row in rows_result if row]
+    print csv_rows
 #
 #    # Set default column name if header is not present
 #    if not csv_headers and len(csv_rows) > 0:
