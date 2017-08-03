@@ -63,7 +63,23 @@ js_src_pattern = re.compile(r'<script.*?src=\"(.*?)\".*?<\/script>',
 js_files_path = os.path.join(package_path, templates_dir)
 
 
-def convert(db_name,table_name, **kwargs):
+def convert(host,port,user,password,db_name,table_name, **kwargs):
+    try:
+        conn=MySQLdb.connect(
+                host=host,
+                port = int(port),
+                user=user,
+                passwd=password,
+                db =db_name,
+                )
+        conn.ping(True)
+        conn.autocommit(True)
+    except Exception,e:
+        logging.error(str(e))
+        sys.exit(1)
+    else:
+        logging.info("数据库连接成功")
+        cur = conn.cursor()
     header_sql = "select COLUMN_NAME from information_schema.COLUMNS where table_name = '%s' and table_schema = '%s';" %(table_name,db_name)
     cur.execute(header_sql)
     header_result=cur.fetchall()
@@ -77,7 +93,7 @@ def convert(db_name,table_name, **kwargs):
     html = render_template(csv_headers, csv_rows, **kwargs)
 
     # Freeze all JS files in template
-    return freeze_js(html)
+    return html
 
 
 def render_template(table_headers, table_items, **options):
@@ -174,31 +190,3 @@ def render_template(table_headers, table_items, **options):
                            datatable_options=datatable_options_json,
                            virtual_scroll=virtual_scroll,
                            enable_export=enable_export)
-
-
-def freeze_js(html):
-    """
-    Freeze all JS assets to the rendered html itself.
-    """
-    matches = js_src_pattern.finditer(html)
-
-    if not matches:
-        return html
-
-    # Reverse regex matches to replace match string with respective JS content
-    for match in reversed(tuple(matches)):
-        # JS file name
-        file_name = match.group(1)
-        file_path = os.path.join(js_files_path, file_name)
-
-        with open(file_path, "r", encoding="utf-8") as f:
-            file_content = f.read()
-        # Replace matched string with inline JS
-        fmt = '<script type="text/javascript">{}</script>'
-        js_content = fmt.format(file_content)
-        html = html[:match.start()] + js_content + html[match.end():]
-
-    return html
-
-with open("test.html","a") as fe:
-    fe.write(convert("darkinfo","dark_status"))
