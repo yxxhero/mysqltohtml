@@ -11,7 +11,7 @@ right-hand side.
 Options:
   -h --help             Show this screen.
   --version             Show version.
-  --host HOST           define mysql host [default: 127.0.0.1].
+  --host HOST           define mysql host [default: 0.0.0.0].
   --port PORT           define mysql port [default: 3306 ].
   --user USER           define mysql user [default: root].
   --http-port HTTPPORT  define http port [default: 8080] 
@@ -49,4 +49,4 @@ if __name__=="__main__":
     tablename=arguments["--tablename"]
     httpport=int(arguments["--http-port"])
 
-    app.run(debug=True,host="0.0.0.0",port=httpport)
+    app.run(debug=True,host=host,port=httpport)
