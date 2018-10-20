@@ -1,7 +1,8 @@
-# mysqltohtml
-Web page display mysql data, and support for sorting, searching  
+## mysqltohtml 
+---
+### Web page display mysql data, and support for sorting, searching  
 用法简介:  
- 
+```shell 
 Usage:  
   cli.py (-h | --help)  
   cli.py [--host HOST] [--port PORT] [--user USER] [--http-port HTTPPORT] --password PASSWORD --database DATABASE --tablename TABLENAME
@@ -18,10 +19,11 @@ Options:
   --password PASSWORD   define mysql password.  
   --database DATABASE   define mysql database.  
   --tablename DATABASE  define mysql tablename.  
-  
+  ```
+  ---
 
 快速启动：  
-
+```shell
 python myqsltohtml.py --password password --database passwd --tablename tablename    
-
+```
 打开浏览器访问8080端口即可
